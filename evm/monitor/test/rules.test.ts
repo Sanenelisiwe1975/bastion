@@ -131,13 +131,13 @@ describe("GuardConfigRule", () => {
   const rule = new GuardConfigRule();
   it("is critical when an outflow limit is removed", () => {
     const [a] = rule.evaluate(batch([
-      mkLog(bastionGuardAbi, "OutflowLimitRemoved", { protected: VAULT, token: USDC }, GUARD),
+      mkLog(bastionGuardAbi, "OutflowLimitRemoved", { protectedContract: VAULT, token: USDC }, GUARD),
     ]));
     expect(a.severity).toBe("critical");
   });
   it("ignores events not emitted by the configured guard", () => {
     expect(rule.evaluate(batch([
-      mkLog(bastionGuardAbi, "OutflowLimitRemoved", { protected: VAULT, token: USDC }, ATTACKER),
+      mkLog(bastionGuardAbi, "OutflowLimitRemoved", { protectedContract: VAULT, token: USDC }, ATTACKER),
     ]))).toHaveLength(0);
   });
 });

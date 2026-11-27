@@ -61,8 +61,8 @@ export class GuardConfigRule implements Rule {
     for (const log of batch.logs) {
       if (!same(log.address, batch.chain.guard)) continue;
       const ev = tryDecode(bastionGuardAbi, log);
-      if (!ev || !("protected" in ev.args)) continue;
-      const c = batch.contracts.find((w) => same(w.address, ev.args.protected as `0x${string}`));
+      if (!ev || !("protectedContract" in ev.args)) continue;
+      const c = batch.contracts.find((w) => same(w.address, ev.args.protectedContract as `0x${string}`));
       if (!c) continue;
       switch (ev.eventName) {
         case "OutflowLimitRemoved":

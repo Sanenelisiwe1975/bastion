@@ -26,30 +26,30 @@ contract BastionGuard {
         bool paused;
     }
 
-    mapping(address protected => Protection) public protections;
-    mapping(address protected => mapping(address guardian => bool)) public isGuardian;
-    mapping(address protected => mapping(address token => Bucket)) public buckets;
+    mapping(address protectedContract => Protection) public protections;
+    mapping(address protectedContract => mapping(address guardian => bool)) public isGuardian;
+    mapping(address protectedContract => mapping(address token => Bucket)) public buckets;
 
-    event Registered(address indexed protected, address indexed admin);
-    event AdminTransferred(address indexed protected, address indexed previousAdmin, address indexed newAdmin);
-    event GuardianSet(address indexed protected, address indexed guardian, bool enabled);
-    event Paused(address indexed protected, address indexed by, string reason);
-    event Unpaused(address indexed protected, address indexed by);
-    event OutflowLimitSet(address indexed protected, address indexed token, uint256 capacity, uint256 window);
-    event OutflowLimitRemoved(address indexed protected, address indexed token);
-    event Outflow(address indexed protected, address indexed token, uint256 amount, uint256 remaining);
+    event Registered(address indexed protectedContract, address indexed admin);
+    event AdminTransferred(address indexed protectedContract, address indexed previousAdmin, address indexed newAdmin);
+    event GuardianSet(address indexed protectedContract, address indexed guardian, bool enabled);
+    event Paused(address indexed protectedContract, address indexed by, string reason);
+    event Unpaused(address indexed protectedContract, address indexed by);
+    event OutflowLimitSet(address indexed protectedContract, address indexed token, uint256 capacity, uint256 window);
+    event OutflowLimitRemoved(address indexed protectedContract, address indexed token);
+    event Outflow(address indexed protectedContract, address indexed token, uint256 amount, uint256 remaining);
 
     error AlreadyRegistered();
     error NotRegistered();
     error NotAdmin();
     error NotGuardianOrAdmin();
-    error ProtocolPaused(address protected);
-    error OutflowLimitExceeded(address protected, address token, uint256 requested, uint256 available);
+    error ProtocolPaused(address protectedContract);
+    error OutflowLimitExceeded(address protectedContract, address token, uint256 requested, uint256 available);
     error InvalidLimit();
     error ZeroAddress();
 
-    modifier onlyAdmin(address protected) {
-        if (protections[protected].admin != msg.sender) revert NotAdmin();
+    modifier onlyAdmin(address protectedContract) {
+        if (protections[protectedContract].admin != msg.sender) revert NotAdmin();
         _;
     }
 
@@ -70,32 +70,32 @@ contract BastionGuard {
     // Admin configuration
     // ---------------------------------------------------------------------
 
-    function transferAdmin(address protected, address newAdmin) external onlyAdmin(protected) {
+    function transferAdmin(address protectedContract, address newAdmin) external onlyAdmin(protectedContract) {
         if (newAdmin == address(0)) revert ZeroAddress();
-        emit AdminTransferred(protected, msg.sender, newAdmin);
-        protections[protected].admin = newAdmin;
+        emit AdminTransferred(protectedContract, msg.sender, newAdmin);
+        protections[protectedContract].admin = newAdmin;
     }
 
-    function setGuardian(address protected, address guardian, bool enabled) external onlyAdmin(protected) {
+    function setGuardian(address protectedContract, address guardian, bool enabled) external onlyAdmin(protectedContract) {
         if (guardian == address(0)) revert ZeroAddress();
-        isGuardian[protected][guardian] = enabled;
-        emit GuardianSet(protected, guardian, enabled);
+        isGuardian[protectedContract][guardian] = enabled;
+        emit GuardianSet(protectedContract, guardian, enabled);
     }
 
     /// @notice Cap outflows of `token` from `protected` to `capacity` per `window` seconds (linear refill).
-    function setOutflowLimit(address protected, address token, uint128 capacity, uint64 window)
+    function setOutflowLimit(address protectedContract, address token, uint128 capacity, uint64 window)
         external
-        onlyAdmin(protected)
+        onlyAdmin(protectedContract)
     {
         if (capacity == 0 || window == 0) revert InvalidLimit();
-        buckets[protected][token] =
+        buckets[protectedContract][token] =
             Bucket({capacity: capacity, window: window, available: capacity, lastUpdate: uint64(block.timestamp)});
-        emit OutflowLimitSet(protected, token, capacity, window);
+        emit OutflowLimitSet(protectedContract, token, capacity, window);
     }
 
-    function removeOutflowLimit(address protected, address token) external onlyAdmin(protected) {
-        delete buckets[protected][token];
-        emit OutflowLimitRemoved(protected, token);
+    function removeOutflowLimit(address protectedContract, address token) external onlyAdmin(protectedContract) {
+        delete buckets[protectedContract][token];
+        emit OutflowLimitRemoved(protectedContract, token);
     }
 
     // ---------------------------------------------------------------------
@@ -103,17 +103,17 @@ contract BastionGuard {
     // ---------------------------------------------------------------------
 
     /// @notice Guardians or the admin can halt a protocol. Guardians cannot unpause.
-    function pause(address protected, string calldata reason) external {
-        Protection storage p = protections[protected];
+    function pause(address protectedContract, string calldata reason) external {
+        Protection storage p = protections[protectedContract];
         if (!p.registered) revert NotRegistered();
-        if (msg.sender != p.admin && !isGuardian[protected][msg.sender]) revert NotGuardianOrAdmin();
+        if (msg.sender != p.admin && !isGuardian[protectedContract][msg.sender]) revert NotGuardianOrAdmin();
         p.paused = true;
-        emit Paused(protected, msg.sender, reason);
+        emit Paused(protectedContract, msg.sender, reason);
     }
 
-    function unpause(address protected) external onlyAdmin(protected) {
-        protections[protected].paused = false;
-        emit Unpaused(protected, msg.sender);
+    function unpause(address protectedContract) external onlyAdmin(protectedContract) {
+        protections[protectedContract].paused = false;
+        emit Unpaused(protectedContract, msg.sender);
     }
 
     // ---------------------------------------------------------------------
@@ -149,14 +149,14 @@ contract BastionGuard {
     // Views
     // ---------------------------------------------------------------------
 
-    function availableOutflow(address protected, address token) external view returns (uint256) {
-        Bucket storage b = buckets[protected][token];
+    function availableOutflow(address protectedContract, address token) external view returns (uint256) {
+        Bucket storage b = buckets[protectedContract][token];
         if (b.capacity == 0) return type(uint256).max;
         return _refilled(b);
     }
 
-    function isPaused(address protected) external view returns (bool) {
-        return protections[protected].paused;
+    function isPaused(address protectedContract) external view returns (bool) {
+        return protections[protectedContract].paused;
     }
 
     function _refilled(Bucket storage b) private view returns (uint256) {

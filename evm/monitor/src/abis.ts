@@ -16,17 +16,17 @@ export const privilegedAbi = parseAbi([
 ]);
 
 export const bastionGuardAbi = parseAbi([
-  "event Registered(address indexed protected, address indexed admin)",
-  "event AdminTransferred(address indexed protected, address indexed previousAdmin, address indexed newAdmin)",
-  "event GuardianSet(address indexed protected, address indexed guardian, bool enabled)",
-  "event Paused(address indexed protected, address indexed by, string reason)",
-  "event Unpaused(address indexed protected, address indexed by)",
-  "event OutflowLimitSet(address indexed protected, address indexed token, uint256 capacity, uint256 window)",
-  "event OutflowLimitRemoved(address indexed protected, address indexed token)",
-  "event Outflow(address indexed protected, address indexed token, uint256 amount, uint256 remaining)",
-  "function pause(address protected, string reason)",
-  "function isPaused(address protected) view returns (bool)",
-  "function isGuardian(address protected, address guardian) view returns (bool)",
+  "event Registered(address indexed protectedContract, address indexed admin)",
+  "event AdminTransferred(address indexed protectedContract, address indexed previousAdmin, address indexed newAdmin)",
+  "event GuardianSet(address indexed protectedContract, address indexed guardian, bool enabled)",
+  "event Paused(address indexed protectedContract, address indexed by, string reason)",
+  "event Unpaused(address indexed protectedContract, address indexed by)",
+  "event OutflowLimitSet(address indexed protectedContract, address indexed token, uint256 capacity, uint256 window)",
+  "event OutflowLimitRemoved(address indexed protectedContract, address indexed token)",
+  "event Outflow(address indexed protectedContract, address indexed token, uint256 amount, uint256 remaining)",
+  "function pause(address protectedContract, string reason)",
+  "function isPaused(address protectedContract) view returns (bool)",
+  "function isGuardian(address protectedContract, address guardian) view returns (bool)",
 ]);
 
 /** Avalanche Interchain Messaging (Teleporter) — v1 event layout. */

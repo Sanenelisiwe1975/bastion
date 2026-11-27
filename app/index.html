@@ -345,38 +345,69 @@ footer .row { display: flex; flex-wrap: wrap; gap: 8px 24px; }
     if (has("Instruction: Initialize")) return { ico: "🏗️", title: "Vault created", sub: "", sig, t };
     return null;
   }
+  // Transactions are immutable: fetch each once, sequentially, backing off on public-RPC rate limits.
+  const txCache = new Map();
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function fetchTxs(sigs, onProgress) {
+    for (const s of sigs) {
+      if (txCache.has(s)) continue;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const t = await conn.getTransaction(s, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
+          if (t) { txCache.set(s, t); onProgress?.(); }
+          break;
+        } catch (e) {
+          if (!/429|Too many requests/i.test(e.message)) throw e;
+          await sleep(500 * 2 ** attempt);
+        }
+      }
+      await sleep(120);
+    }
+  }
+  function renderTimeline(sigs, loading) {
+    const items = sigs.map((s) => txCache.get(s) && classify(s, txCache.get(s))).filter(Boolean);
+    const when = (t) => t.blockTime ? new Date(t.blockTime * 1000).toLocaleString() : "";
+    const more = loading ? `<li><span></span><span class="empty">Loading older events…</span><span></span></li>` : "";
+
+    const ai = items.filter((x) => x.kind === "ai");
+    $("ai-list").innerHTML = ai.length ? ai.map((x) => {
+      const [head, ...rest] = x.text.split(" | ");
+      return `<div class="ai"><div class="ai-head">🧠 ${escapeHtml(head)}</div>${rest.map((r) => `<p>${escapeHtml(r)}</p>`).join("")}
+        <p class="sub"><a href="${tx(x.sig)}" target="_blank" rel="noopener">memo tx ${short(x.sig)}</a> · ${when(x.t)}</p></div>`;
+    }).join("") : `<div class="empty">${loading ? "Loading…" : "No AI reports yet. They appear when the monitor runs with ANTHROPIC_API_KEY set."}</div>`;
+
+    const tl = items.filter((x) => x.kind !== "ai");
+    $("timeline").innerHTML = (tl.map((x) => `<li><span class="ico">${x.ico}</span>
+      <span><div class="ev-title">${escapeHtml(x.title)}</div>${x.sub ? `<div class="ev-sub">${escapeHtml(x.sub)}</div>` : ""}</span>
+      <span class="ev-time"><a href="${tx(x.sig)}" target="_blank" rel="noopener">${short(x.sig)}</a><br>${when(x.t)}</span></li>`).join("") + more)
+      || `<li><span></span><span class="empty">No activity yet.</span><span></span></li>`;
+  }
+  let timelineBusy = false;
   async function refreshTimeline() {
+    if (timelineBusy) return;
+    timelineBusy = true;
     try {
       const addrs = [cfg.protected.protection, cfg.protected.vaultTokens, cfg.unprotected.vaultTokens, cfg.guardian];
       const lists = await Promise.all(addrs.map((a) => conn.getSignaturesForAddress(pk(a), { limit: 30 })));
       const seen = new Map();
       for (const l of lists) for (const s of l) seen.set(s.signature, s);
+      // Newest first, rendered as each transaction arrives.
       const sigs = [...seen.values()].sort((a, b) => (b.blockTime || 0) - (a.blockTime || 0)).slice(0, 40).map((s) => s.signature);
-      const txs = await conn.getTransactions(sigs, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
-      const items = sigs.map((s, i) => txs[i] && classify(s, txs[i])).filter(Boolean);
-      const when = (t) => t.blockTime ? new Date(t.blockTime * 1000).toLocaleString() : "";
-
-      const ai = items.filter((x) => x.kind === "ai");
-      $("ai-list").innerHTML = ai.length ? ai.map((x) => {
-        const [head, ...rest] = x.text.split(" | ");
-        return `<div class="ai"><div class="ai-head">🧠 ${escapeHtml(head)}</div>${rest.map((r) => `<p>${escapeHtml(r)}</p>`).join("")}
-          <p class="sub"><a href="${tx(x.sig)}" target="_blank" rel="noopener">memo tx ${short(x.sig)}</a> · ${when(x.t)}</p></div>`;
-      }).join("") : `<div class="empty">No AI reports yet. They appear when the monitor runs with ANTHROPIC_API_KEY set.</div>`;
-
-      const tl = items.filter((x) => x.kind !== "ai");
-      $("timeline").innerHTML = tl.length ? tl.map((x) => `<li><span class="ico">${x.ico}</span>
-        <span><div class="ev-title">${escapeHtml(x.title)}</div>${x.sub ? `<div class="ev-sub">${escapeHtml(x.sub)}</div>` : ""}</span>
-        <span class="ev-time"><a href="${tx(x.sig)}" target="_blank" rel="noopener">${short(x.sig)}</a><br>${when(x.t)}</span></li>`).join("")
-        : `<li><span></span><span class="empty">No activity yet.</span><span></span></li>`;
+      renderTimeline(sigs, true);
+      await fetchTxs(sigs, () => renderTimeline(sigs, true));
+      renderTimeline(sigs, false);
     } catch (e) {
       showErr("Timeline error: " + e.message);
+    } finally {
+      timelineBusy = false;
     }
   }
 
   // ?try=all or ?try=small runs a simulation on load (handy for screen recordings and tests).
   if (params.get("try") === "all") $("try-all").click();
   if (params.get("try") === "small") $("try-small").click();
-  await Promise.all([refreshState(), refreshTimeline()]);
+  refreshState();
+  refreshTimeline();
   setInterval(refreshState, 8000);
   setInterval(refreshTimeline, 30000);
 })();

@@ -1,0 +1,23 @@
+{
+  "cluster": "devnet",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "explorerQuery": "?cluster=devnet",
+  "guardProgram": "2eace2zRjWZb6faQm3YcVn6NNfrRGVJw9F9FsRFvNP6M",
+  "vaultProgram": "gStKd68ZtxeZ6cVUrJdwwrNAwd38sT5QFcmabUXesKU",
+  "mint": "4AMCVqm4wtCyYxY742uqZ6y9zD1PPhy2jFRxBQMZgsLD",
+  "symbol": "dUSD",
+  "decimals": 6,
+  "unprotected": {
+    "vault": "HmexsNvKU1xuhiWMAh4wtTKv39HBb47Jk4ekGCPe7s1M",
+    "vaultTokens": "FsKds5tWwLMzNHBtoVtHdHCb5bUZUATNUr6Mg8c9Biiv"
+  },
+  "protected": {
+    "vault": "45TiT3hyFzNN67shCnRjTHaoP8cBtExA5SSiTgDp8kfw",
+    "authority": "6PqhX97NeVHBUToJrTFfDTFujxaRJkTb29iHArTP4A4y",
+    "vaultTokens": "5krdbk2zskmnZ3ReBwoudTLGQuxvpNsRGobSRvHB5EAF",
+    "protection": "J2zbYQwHHP57nRgYQw7sNanbYcXjFh9hsw3yBsGmrZwZ",
+    "limit": "BCM8sVeU8EVAoKpiyJXiEZmVtHTmY37qG8XWxyxePA1k"
+  },
+  "admin": "Ei34BexhU2BTz3HDE9jAhiZ4UKbpRygM7g4vyHPeKHTi",
+  "guardian": "7vX5RNWD8zeNcZw64JWoGudnkSu4q7nnAqSBwZgArCCJ"
+}

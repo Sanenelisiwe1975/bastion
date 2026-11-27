@@ -75,9 +75,9 @@ async function main() {
   };
   const local = RPC_URL.includes("127.0.0.1") || RPC_URL.includes("localhost");
   const monitorConfig = {
-    cluster: local ? "localnet" : "custom",
+    cluster: local ? "localnet" : RPC_URL.includes("devnet") ? "devnet" : "custom",
     rpcUrl: RPC_URL,
-    pollIntervalMs: 400,
+    pollIntervalMs: local ? 400 : 1500,
     explorer: local
       ? "https://explorer.solana.com/tx/{sig}?cluster=custom&customUrl=http%3A%2F%2F127.0.0.1%3A8899"
       : "https://explorer.solana.com/tx/{sig}?cluster=devnet",

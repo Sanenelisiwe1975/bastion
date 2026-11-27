@@ -17,10 +17,24 @@ Most big Solana exploits come down to one missing check, such as a missing signe
 | 🌐 Live demo | _TODO: add link (hosted `app/`)_ |
 | 💻 Source | _TODO: add GitHub repo link_ |
 
-| Program (devnet) | ID |
+### Deployed on devnet
+
+| Program | Address |
 |---|---|
-| `bastion_guard` (the firewall) | `2eace2zRjWZb6faQm3YcVn6NNfrRGVJw9F9FsRFvNP6M` |
-| `demo_vault` (vulnerable vault for the demo) | `gStKd68ZtxeZ6cVUrJdwwrNAwd38sT5QFcmabUXesKU` |
+| `bastion_guard` (the firewall) | [`2eace2zRjWZb6faQm3YcVn6NNfrRGVJw9F9FsRFvNP6M`](https://explorer.solana.com/address/2eace2zRjWZb6faQm3YcVn6NNfrRGVJw9F9FsRFvNP6M?cluster=devnet) |
+| `demo_vault` (vulnerable vault for the demo) | [`gStKd68ZtxeZ6cVUrJdwwrNAwd38sT5QFcmabUXesKU`](https://explorer.solana.com/address/gStKd68ZtxeZ6cVUrJdwwrNAwd38sT5QFcmabUXesKU?cluster=devnet) |
+
+The demo was run on devnet. Every step is onchain:
+
+| Step | Transaction |
+|---|---|
+| Unprotected vault drained: 1,000,000 dUSD in one tx | [`tBmt…u6EU`](https://explorer.solana.com/tx/tBmtCPvndbtRWPcjSEVSG4K1crKwj3xND89NVwNoFeknGeMBQVq9ZSj6siHF9GsNAejT2F5ReepLm6LzR8uu6EU?cluster=devnet) |
+| Protected vault: full drain **blocked** (`OutflowLimitExceeded`) | [`3v66…aiCK`](https://explorer.solana.com/tx/3v66x5kPqjpgu8tDcvDwW2TVJvryYvUExrfkchLWXJGt2cKjTzShXbzoGZk1FDrELips6ejHNfqtiD7dWHZ2aiCK?cluster=devnet) |
+| Attacker takes the hourly limit: 100,000 dUSD | [`4j8K…RdEL`](https://explorer.solana.com/tx/4j8KCifJFmx3msGy3qwKJymGpBVmxdPLUwgx9gR1wEuXnn7apDrp7AuqmWJBLPpmSdJknDC9Vd9YgTfdL67CRdEL?cluster=devnet) |
+| Monitor **auto-pauses** the vault | [`u8qN…SyoL`](https://explorer.solana.com/tx/u8qNurFF4QX7fiwb4sJmUMVxyHer2oF2WrHtw1JZ1H96HZkBRb4QSR6vDjmxZ5nrKMAN1qV6VAij95u2fibSyoL?cluster=devnet) |
+| Next attempt **blocked** (`ProtocolPaused`): 900,000 dUSD (90%) safe | [`5gft…RkPN`](https://explorer.solana.com/tx/5gftUohtJFdjKmfZrnSgocoByLBjfn42c2zfMCMvZGfyyoDneVLhkXqnGtRkucBPcUVPmvYcZARYpCUdHotnRkPN?cluster=devnet) |
+
+Protected vault [`45TiT3hy…`](https://explorer.solana.com/address/45TiT3hyFzNN67shCnRjTHaoP8cBtExA5SSiTgDp8kfw?cluster=devnet) · demo mint [`4AMCVqm4…`](https://explorer.solana.com/address/4AMCVqm4wtCyYxY742uqZ6y9zD1PPhy2jFRxBQMZgsLD?cluster=devnet) · guardian [`7vX5RNWD…`](https://explorer.solana.com/address/7vX5RNWD8zeNcZw64JWoGudnkSu4q7nnAqSBwZgArCCJ?cluster=devnet)
 
 ## Demo: same bug, with and without Bastion
 
@@ -163,12 +177,12 @@ solana program deploy target/deploy/demo_vault.so    --program-id target/deploy/
 
 # run the demo against devnet
 cd monitor
-RPC_URL=https://api.devnet.solana.com npx tsx scripts/demo-setup.ts
+RPC_URL=https://api.devnet.solana.com FUNDER_KEYPAIR=~/.config/solana/id.json npx tsx scripts/demo-setup.ts
 GUARDIAN_KEYPAIR=../demo/keys/guardian.json npx tsx src/index.ts ../demo/monitor.config.json &
 RPC_URL=https://api.devnet.solana.com npx tsx scripts/demo-attack.ts
 ```
 
-The program keypairs in `target/deploy/` match the `declare_id!` values. If you generate new ones, update `declare_id!`, `Anchor.toml`, `monitor/src/bastion.ts` and `demo.sh` to match. On devnet the setup script's airdrops may be rate-limited; fund the keys in `demo/keys/` from the faucet if so.
+The program keypairs in `target/deploy/` match the `declare_id!` values. If you generate new ones, update `declare_id!`, `Anchor.toml`, `monitor/src/bastion.ts` and `demo.sh` to match. `FUNDER_KEYPAIR` funds the demo keys from your wallet (0.15 SOL each, `FUND_SOL` to change) instead of devnet airdrops, which are rate-limited. Setup writes `app/demo.json` for the live page.
 
 ## Layout
 

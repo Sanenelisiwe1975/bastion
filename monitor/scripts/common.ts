@@ -5,6 +5,7 @@ import {
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
+  SystemProgram,
   Transaction,
   type TransactionInstruction,
 } from "@solana/web3.js";
@@ -33,7 +34,19 @@ export function loadKeypair(name: string): Keypair {
   return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(p, "utf8"))));
 }
 
+/**
+ * Funds a demo key. With FUNDER_KEYPAIR (path to a Solana CLI keypair) it transfers from that
+ * wallet, which avoids devnet airdrop rate limits; otherwise it requests an airdrop.
+ */
 export async function airdrop(conn: Connection, kp: Keypair, sol = 10) {
+  const funderPath = process.env.FUNDER_KEYPAIR;
+  if (funderPath) {
+    const funder = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(funderPath, "utf8"))));
+    const lamports = Math.round(Number(process.env.FUND_SOL ?? "0.15") * LAMPORTS_PER_SOL);
+    const r = await send(conn, [SystemProgram.transfer({ fromPubkey: funder.publicKey, toPubkey: kp.publicKey, lamports })], [funder]);
+    if (!r.ok) throw new Error(`funding ${kp.publicKey.toBase58()} failed: ${r.error}`);
+    return;
+  }
   const sig = await conn.requestAirdrop(kp.publicKey, sol * LAMPORTS_PER_SOL);
   const bh = await conn.getLatestBlockhash();
   await conn.confirmTransaction({ signature: sig, ...bh }, "confirmed");
