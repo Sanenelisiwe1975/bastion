@@ -14,8 +14,8 @@ Most big Solana exploits come down to one missing check, such as a missing signe
 | | |
 |---|---|
 | 🎥 Demo video | _TODO: add link_ |
-| 🌐 Live demo | _TODO: add link (hosted `app/`)_ |
-| 💻 Source | _TODO: add GitHub repo link_ |
+| 🌐 Live demo | https://sanenelisiwe1975.github.io/bastion/ |
+| 💻 Source | https://github.com/Sanenelisiwe1975/bastion |
 
 ### Deployed on devnet
 
