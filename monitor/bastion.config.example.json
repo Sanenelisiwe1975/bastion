@@ -1,0 +1,31 @@
+{
+  "cluster": "mainnet-beta",
+  "rpcUrl": "https://api.mainnet-beta.solana.com",
+  "commitment": "confirmed",
+  "pollIntervalMs": 1000,
+  "stateFile": "bastion.state.json",
+  "explorer": "https://explorer.solana.com/tx/{sig}",
+  "protocols": [
+    {
+      "name": "ExampleVault",
+      "protectedAuthority": "REPLACE_WITH_YOUR_PROTECTED_AUTHORITY_PDA",
+      "programs": ["REPLACE_WITH_YOUR_PROGRAM_ID"],
+      "autoPause": true,
+      "tokenAccounts": [
+        {
+          "address": "REPLACE_WITH_YOUR_USDC_TOKEN_ACCOUNT",
+          "symbol": "USDC",
+          "decimals": 6,
+          "warnOutflow": "10000000000",
+          "criticalOutflow": "250000000000",
+          "velocityLimit": "500000000000",
+          "velocityWindowSec": 600
+        }
+      ]
+    }
+  ],
+  "alerts": {
+    "webhooks": ["https://discord.com/api/webhooks/..."],
+    "minSeverity": "warning"
+  }
+}

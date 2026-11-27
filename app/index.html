@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bastion Live Demo</title>
+<meta name="description" content="Bastion: an onchain firewall for Solana programs. Live devnet demo of a vault exploit with and without Bastion.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --border: #e2e5ea;
+  --text: #11151c; --muted: #5d6675; --faint: #8a93a3;
+  --accent: #6d4aff; --accent-soft: #efeaff;
+  --good: #128a52; --good-soft: #e5f6ee; --bad: #c8322b; --bad-soft: #fdecea; --warn: #b26a00; --warn-soft: #fff3df;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 4px 16px rgba(16,24,40,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0e13; --surface: #151922; --surface-2: #1c212c; --border: #2a303c;
+    --text: #eef1f6; --muted: #a2abba; --faint: #737d8e;
+    --accent: #9d86ff; --accent-soft: #241d45;
+    --good: #3ccf8e; --good-soft: #11291f; --bad: #ff6b62; --bad-soft: #33171a; --warn: #f2b14c; --warn-soft: #30230f;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c0e13; --surface: #151922; --surface-2: #1c212c; --border: #2a303c;
+  --text: #eef1f6; --muted: #a2abba; --faint: #737d8e;
+  --accent: #9d86ff; --accent-soft: #241d45;
+  --good: #3ccf8e; --good-soft: #11291f; --bad: #ff6b62; --bad-soft: #33171a; --warn: #f2b14c; --warn-soft: #30230f;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 Inter, system-ui, sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .85em; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+header { padding: 40px 0 8px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 3px var(--good-soft); }
+.dot.off { background: var(--faint); box-shadow: none; }
+h1 { font-size: clamp(26px, 4.5vw, 40px); line-height: 1.15; margin: 28px 0 10px; letter-spacing: -.02em; }
+.lede { color: var(--muted); max-width: 720px; font-size: 16.5px; margin: 0; }
+section { margin: 32px 0; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin: 0 0 12px; font-weight: 600; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); min-width: 0; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; }
+.card-title { font-weight: 600; }
+.badge { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 6px; letter-spacing: .03em; }
+.badge.good { background: var(--good-soft); color: var(--good); }
+.badge.bad { background: var(--bad-soft); color: var(--bad); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.muted { background: var(--surface-2); color: var(--muted); }
+.big { font-size: 30px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.sub { color: var(--muted); font-size: 13.5px; }
+.bar { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 12px 0 6px; }
+.bar > i { display: block; height: 100%; border-radius: 999px; transition: width .6s ease; }
+.kv { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; padding: 6px 0; border-top: 1px dashed var(--border); }
+.kv span:first-child { color: var(--muted); }
+.try { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
+button { font: inherit; font-weight: 600; font-size: 14px; border-radius: 10px; padding: 10px 16px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: .55; cursor: wait; }
+.result { border-radius: 10px; padding: 12px 14px; font-size: 14px; display: none; }
+.result.show { display: block; }
+.result.bad { background: var(--good-soft); color: var(--good); }
+.result.ok { background: var(--bad-soft); color: var(--bad); }
+.result pre { margin: 8px 0 0; white-space: pre-wrap; word-break: break-all; color: var(--muted); font-size: 12px; max-height: 160px; overflow: auto; }
+.timeline { list-style: none; padding: 0; margin: 0; }
+.timeline li { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; padding: 11px 0; border-top: 1px solid var(--border); align-items: start; }
+.timeline li:first-child { border-top: 0; }
+.ico { font-size: 16px; line-height: 1.4; }
+.ev-title { font-weight: 600; font-size: 14.5px; }
+.ev-sub { color: var(--muted); font-size: 13px; word-break: break-word; }
+.ev-time { color: var(--faint); font-size: 12px; white-space: nowrap; text-align: right; }
+.ai { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+.ai-head { font-weight: 700; margin-bottom: 4px; }
+.ai p { margin: 6px 0 0; font-size: 14px; }
+.empty { color: var(--faint); font-size: 14px; padding: 8px 0; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 760px) { .how { grid-template-columns: 1fr; } }
+.how h3 { margin: 0 0 6px; font-size: 15px; }
+.how p { margin: 0; color: var(--muted); font-size: 14px; }
+footer { padding: 28px 0 48px; color: var(--faint); font-size: 13px; border-top: 1px solid var(--border); margin-top: 40px; }
+footer .row { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.err { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 12px 14px; font-size: 14px; display: none; }
+.err.show { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="top">
+      <div class="brand"><span aria-hidden="true">🏰</span> Bastion</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="pill"><span class="dot off" id="live-dot"></span><span id="net">connecting…</span></span>
+      </div>
+    </div>
+    <h1>An onchain firewall for Solana programs</h1>
+    <p class="lede">Audits find bugs before launch. Bastion limits the damage from the ones they miss. Below are two identical vaults with the same bug (<span class="mono">sweep()</span> forgets its owner check), live on <span id="net2">devnet</span>. One is behind Bastion.</p>
+  </header>
+
+  <div class="err" id="err"></div>
+
+  <section>
+    <h2>The same exploit, twice</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Vault without Bastion</span><span class="badge muted" id="u-badge">…</span></div>
+        <div class="big" id="u-bal">—</div>
+        <div class="sub">left of <span id="u-tvl">1,000,000</span> dUSD deposited by users</div>
+        <div class="bar"><i id="u-bar" style="width:0;background:var(--bad)"></i></div>
+        <div class="kv"><span>Lost in one transaction</span><span id="u-lost">—</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Vault behind Bastion</span><span class="badge muted" id="p-badge">…</span></div>
+        <div class="big" id="p-bal">—</div>
+        <div class="sub">left of <span id="p-tvl">1,000,000</span> dUSD deposited by users</div>
+        <div class="bar"><i id="p-bar" style="width:0;background:var(--good)"></i></div>
+        <div class="kv"><span>Rate limit</span><span id="p-limit">—</span></div>
+        <div class="kv"><span>Available to leave right now</span><span id="p-avail">—</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Attack it yourself</h2>
+    <div class="card">
+      <p style="margin:0 0 6px">These buttons build the attacker's real <span class="mono">sweep()</span> transaction against the protected vault and <b>simulate</b> it on the live program. Nothing is signed or sent, and the page holds no keys.</p>
+      <div class="try">
+        <button class="primary" id="try-all">Drain the whole vault</button>
+        <button id="try-small">Take 1,000 dUSD</button>
+      </div>
+      <div class="result" id="try-result"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>AI guardian reports <span style="text-transform:none;letter-spacing:0">(published onchain by the guardian)</span></h2>
+    <div id="ai-list"><div class="empty">Loading…</div></div>
+  </section>
+
+  <section>
+    <h2>Incident timeline</h2>
+    <div class="card"><ul class="timeline" id="timeline"><li><span></span><span class="empty">Loading…</span><span></span></li></ul></div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <div class="how">
+      <div class="card"><h3>1 · Rate limit</h3><p>Before any tokens leave, the vault calls <span class="mono">bastion_guard::check_outflow</span> by CPI. A refilling bucket caps outflows per mint, so any bug can only leak one window's worth.</p></div>
+      <div class="card"><h3>2 · Circuit breaker</h3><p>The monitor watches every transaction, failed ones too. A blocked over-limit drain is the attacker's first move, and it triggers an automatic <span class="mono">pause</span> by a key that can only pause.</p></div>
+      <div class="card"><h3>3 · AI guardian</h3><p>Claude reviews each incident, explains it in plain language, can pause gray-zone cases, and publishes its report onchain as a memo signed by the guardian.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="row">
+      <span>bastion_guard <a class="mono" id="f-guard" target="_blank" rel="noopener"></a></span>
+      <span>demo_vault <a class="mono" id="f-vault" target="_blank" rel="noopener"></a></span>
+    </div>
+  </footer>
+</div>
+
+<script src="https://unpkg.com/@solana/web3.js@1.98.0/lib/index.iife.min.js"></script>
+<script>
+(async () => {
+  const W = window.solanaWeb3;
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  let cfg;
+  try {
+    cfg = await (await fetch(params.get("config") || "demo.json", { cache: "no-store" })).json();
+  } catch (e) {
+    showErr("Could not load demo.json. Run the demo setup against devnet first (see README).");
+    return;
+  }
+  const conn = new W.Connection(cfg.rpcUrl, "confirmed");
+  const pk = (s) => new W.PublicKey(s);
+  const UNIT = 10n ** BigInt(cfg.decimals);
+  const fmt = (v) => (BigInt(v) / UNIT).toLocaleString("en-US");
+  const tx = (sig) => `https://explorer.solana.com/tx/${sig}${cfg.explorerQuery}`;
+  const acct = (a) => `https://explorer.solana.com/address/${a}${cfg.explorerQuery}`;
+  const short = (s) => s.slice(0, 4) + "…" + s.slice(-4);
+  const GUARD_ERRORS = ["NotAdmin", "NotGuardianOrAdmin", "ProtocolPaused", "OutflowLimitExceeded", "InvalidLimit", "InvalidLimitAccount", "TooManyGuardians"];
+  const TVL = 1_000_000n * UNIT;
+
+  $("net").textContent = cfg.cluster;
+  $("net2").textContent = cfg.cluster;
+  for (const [id, a] of [["f-guard", cfg.guardProgram], ["f-vault", cfg.vaultProgram]]) { $(id).textContent = a; $(id).href = acct(a); }
+
+  function showErr(m) { $("err").textContent = m; $("err").classList.add("show"); }
+  const u64 = (dv, o) => dv.getBigUint64(o, true);
+  const i64 = (dv, o) => dv.getBigInt64(o, true);
+  const dvOf = (data) => new DataView(data.buffer, data.byteOffset, data.byteLength);
+
+  // ---- live state -------------------------------------------------------
+  async function refreshState() {
+    try {
+      const [ub, pb, prot, lim] = await Promise.all([
+        conn.getTokenAccountBalance(pk(cfg.unprotected.vaultTokens)),
+        conn.getTokenAccountBalance(pk(cfg.protected.vaultTokens)),
+        conn.getAccountInfo(pk(cfg.protected.protection)),
+        conn.getAccountInfo(pk(cfg.protected.limit)),
+      ]);
+      const u = BigInt(ub.value.amount), p = BigInt(pb.value.amount);
+      $("u-bal").textContent = fmt(u) + " dUSD";
+      $("u-bar").style.width = Number((u * 100n) / TVL) + "%";
+      $("u-lost").textContent = fmt(TVL - u) + " dUSD";
+      $("u-badge").textContent = u === 0n ? "DRAINED" : "EXPOSED";
+      $("u-badge").className = "badge " + (u === 0n ? "bad" : "warn");
+
+      $("p-bal").textContent = fmt(p) + " dUSD";
+      $("p-bar").style.width = Number((p * 100n) / TVL) + "%";
+      const paused = prot && prot.data[72] === 1;
+      $("p-badge").textContent = paused ? "PAUSED BY GUARDIAN" : "PROTECTED";
+      $("p-badge").className = "badge " + (paused ? "warn" : "good");
+      if (lim) {
+        const dv = dvOf(lim.data);
+        const cap = u64(dv, 72), win = i64(dv, 80), avail = u64(dv, 88), last = i64(dv, 96);
+        const now = BigInt(Math.floor(Date.now() / 1000));
+        let a = avail + ((now > last ? now - last : 0n) * cap) / BigInt(win);
+        if (a > cap) a = cap;
+        $("p-limit").textContent = `${fmt(cap)} dUSD per ${Number(win) / 3600}h`;
+        $("p-avail").textContent = paused ? "0 dUSD (paused)" : fmt(a) + " dUSD";
+      }
+      $("live-dot").classList.remove("off");
+    } catch (e) {
+      $("live-dot").classList.add("off");
+      showErr("RPC error: " + e.message);
+    }
+  }
+
+  // ---- attack simulation -----------------------------------------------
+  const enc = new TextEncoder();
+  async function disc(name) {
+    return new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode("global:" + name))).slice(0, 8);
+  }
+  async function simulateSweep(amount) {
+    const v = cfg.protected, payer = pk(cfg.admin);
+    const data = new Uint8Array(16);
+    data.set(await disc("sweep"), 0);
+    new DataView(data.buffer).setBigUint64(8, amount, true);
+    const m = (k, w = false, s = false) => ({ pubkey: pk(k), isWritable: w, isSigner: s });
+    const ix = new W.TransactionInstruction({
+      programId: pk(cfg.vaultProgram),
+      keys: [
+        m(cfg.admin, false, true), // any signer works: that is the bug
+        m(v.vault), m(v.authority), m(cfg.mint), m(v.vaultTokens, true),
+        m(cfg.unprotected.vaultTokens, true), // destination: any token account of the mint
+        m(cfg.guardProgram), m(v.protection), m(v.limit, true),
+        m("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+      ],
+      data,
+    });
+    const { blockhash } = await conn.getLatestBlockhash();
+    const msg = new W.TransactionMessage({ payerKey: payer, recentBlockhash: blockhash, instructions: [ix] }).compileToV0Message();
+    const res = await conn.simulateTransaction(new W.VersionedTransaction(msg), { sigVerify: false, replaceRecentBlockhash: true });
+    return res.value;
+  }
+  function guardErrorFrom(logs) {
+    for (const l of logs || []) {
+      const m = l.match(new RegExp(`^Program ${cfg.guardProgram} failed: custom program error: 0x([0-9a-f]+)`));
+      if (m) return GUARD_ERRORS[parseInt(m[1], 16) - 6000];
+    }
+    for (const l of logs || []) { const m = l.match(/Error Code: (\w+)/); if (m) return m[1]; }
+  }
+  async function runTry(amountFn, btn) {
+    const out = $("try-result");
+    btn.disabled = true;
+    try {
+      const amount = await amountFn();
+      const r = await simulateSweep(amount);
+      const logs = (r.logs || []).filter((l) => /Bastion|Error|failed|Instruction/.test(l)).join("\n");
+      if (r.err) {
+        const name = guardErrorFrom(r.logs) || JSON.stringify(r.err);
+        const why = { ProtocolPaused: "The guardian has paused the vault: nothing can leave until the admin multisig unpauses it.",
+          OutflowLimitExceeded: "More than the hourly rate limit allows. The over-limit attempt itself is what tips off the monitor." }[name] || "";
+        out.className = "result show bad";
+        out.innerHTML = `<b>🛡️ Blocked by Bastion: ${name}</b><div>${why}</div><pre>${escapeHtml(logs)}</pre>`;
+      } else {
+        out.className = "result show ok";
+        out.innerHTML = `<b>⚠️ This sweep of ${fmt(amount)} dUSD would succeed</b><div>It is under the rate limit and the vault is not paused. The monitor would flag it and pause the vault.</div><pre>${escapeHtml(logs)}</pre>`;
+      }
+    } catch (e) {
+      out.className = "result show ok";
+      out.textContent = "Simulation failed: " + e.message;
+    } finally { btn.disabled = false; }
+  }
+  $("try-all").onclick = (e) => runTry(async () => BigInt((await conn.getTokenAccountBalance(pk(cfg.protected.vaultTokens))).value.amount) || 1n, e.currentTarget);
+  $("try-small").onclick = (e) => runTry(async () => 1000n * UNIT, e.currentTarget);
+
+  // ---- timeline + AI reports -------------------------------------------
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+  function delta(t, account) {
+    const keys = t.transaction.message.getAccountKeys({ accountKeysFromLookups: t.meta.loadedAddresses }).keySegments().flat().map(String);
+    const i = keys.indexOf(account);
+    if (i < 0) return 0n;
+    const pre = t.meta.preTokenBalances.find((b) => b.accountIndex === i), post = t.meta.postTokenBalances.find((b) => b.accountIndex === i);
+    return BigInt(post?.uiTokenAmount.amount ?? "0") - BigInt(pre?.uiTokenAmount.amount ?? "0");
+  }
+  function pausedReason(logs) {
+    // Decode the guard's Paused event: disc(8) protected(32) by(32) reason(borsh string)
+    let inGuard = 0;
+    for (const l of logs) {
+      if (l.startsWith(`Program ${cfg.guardProgram} invoke`)) inGuard++;
+      else if (l.startsWith(`Program ${cfg.guardProgram} success`)) inGuard--;
+      else if (inGuard && l.startsWith("Program data: ")) {
+        const b = Uint8Array.from(atob(l.slice(14)), (c) => c.charCodeAt(0));
+        if (b.length > 76) {
+          const len = new DataView(b.buffer).getUint32(72, true);
+          return new TextDecoder().decode(b.slice(76, 76 + len));
+        }
+      }
+    }
+  }
+  function classify(sig, t) {
+    const logs = t.meta?.logMessages || [];
+    const has = (s) => logs.some((l) => l.includes(s));
+    const failed = !!t.meta?.err;
+    const gErr = guardErrorFrom(logs);
+    const memo = logs.map((l) => l.match(/^Program log: Memo \(len \d+\): (".*")$/)).find(Boolean);
+    if (memo) {
+      let text; try { text = JSON.parse(memo[1]); } catch { text = memo[1]; }
+      if (text.startsWith("bastion:ai ")) return { kind: "ai", text: text.slice(11), sig, t };
+    }
+    if (has("Instruction: Sweep")) {
+      const fromP = delta(t, cfg.protected.vaultTokens), fromU = delta(t, cfg.unprotected.vaultTokens);
+      if (failed) return { ico: "🛡️", title: `Drain attempt blocked: ${gErr || "failed"}`, sub: `Attacker ${short(t.transaction.message.staticAccountKeys[0].toBase58())} on the protected vault`, sig, t };
+      if (fromU < 0n) return { ico: "💀", title: `Unprotected vault drained: ${fmt(-fromU)} dUSD`, sub: "One transaction, no limit, nothing to stop it", sig, t };
+      if (fromP < 0n) return { ico: "💸", title: `${fmt(-fromP)} dUSD left the protected vault`, sub: "Within the rate limit; the most an attacker can take per window", sig, t };
+    }
+    if (has("Instruction: Pause")) return { ico: "🛑", title: "Vault paused by the guardian", sub: pausedReason(logs) || "", sig, t };
+    if (has("Instruction: Unpause")) return { ico: "▶️", title: "Vault unpaused by the admin", sub: "", sig, t };
+    if (has("Instruction: Deposit")) return { ico: "💰", title: "User deposit", sub: "", sig, t };
+    if (has("Instruction: SetOutflowLimit")) return { ico: "⚙️", title: "Rate limit configured", sub: "", sig, t };
+    if (has("Instruction: SetGuardian")) return { ico: "🤖", title: "Guardian (monitor bot) added", sub: "", sig, t };
+    if (has("Instruction: Initialize")) return { ico: "🏗️", title: "Vault created", sub: "", sig, t };
+    return null;
+  }
+  async function refreshTimeline() {
+    try {
+      const addrs = [cfg.protected.protection, cfg.protected.vaultTokens, cfg.unprotected.vaultTokens, cfg.guardian];
+      const lists = await Promise.all(addrs.map((a) => conn.getSignaturesForAddress(pk(a), { limit: 30 })));
+      const seen = new Map();
+      for (const l of lists) for (const s of l) seen.set(s.signature, s);
+      const sigs = [...seen.values()].sort((a, b) => (b.blockTime || 0) - (a.blockTime || 0)).slice(0, 40).map((s) => s.signature);
+      const txs = await conn.getTransactions(sigs, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
+      const items = sigs.map((s, i) => txs[i] && classify(s, txs[i])).filter(Boolean);
+      const when = (t) => t.blockTime ? new Date(t.blockTime * 1000).toLocaleString() : "";
+
+      const ai = items.filter((x) => x.kind === "ai");
+      $("ai-list").innerHTML = ai.length ? ai.map((x) => {
+        const [head, ...rest] = x.text.split(" | ");
+        return `<div class="ai"><div class="ai-head">🧠 ${escapeHtml(head)}</div>${rest.map((r) => `<p>${escapeHtml(r)}</p>`).join("")}
+          <p class="sub"><a href="${tx(x.sig)}" target="_blank" rel="noopener">memo tx ${short(x.sig)}</a> · ${when(x.t)}</p></div>`;
+      }).join("") : `<div class="empty">No AI reports yet. They appear when the monitor runs with ANTHROPIC_API_KEY set.</div>`;
+
+      const tl = items.filter((x) => x.kind !== "ai");
+      $("timeline").innerHTML = tl.length ? tl.map((x) => `<li><span class="ico">${x.ico}</span>
+        <span><div class="ev-title">${escapeHtml(x.title)}</div>${x.sub ? `<div class="ev-sub">${escapeHtml(x.sub)}</div>` : ""}</span>
+        <span class="ev-time"><a href="${tx(x.sig)}" target="_blank" rel="noopener">${short(x.sig)}</a><br>${when(x.t)}</span></li>`).join("")
+        : `<li><span></span><span class="empty">No activity yet.</span><span></span></li>`;
+    } catch (e) {
+      showErr("Timeline error: " + e.message);
+    }
+  }
+
+  // ?try=all or ?try=small runs a simulation on load (handy for screen recordings and tests).
+  if (params.get("try") === "all") $("try-all").click();
+  if (params.get("try") === "small") $("try-small").click();
+  await Promise.all([refreshState(), refreshTimeline()]);
+  setInterval(refreshState, 8000);
+  setInterval(refreshTimeline, 30000);
+})();
+</script>
+</body>
+</html>

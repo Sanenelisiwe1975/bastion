@@ -1,0 +1,21 @@
+[toolchain]
+anchor_version = "0.31.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+bastion_guard = "2eace2zRjWZb6faQm3YcVn6NNfrRGVJw9F9FsRFvNP6M"
+demo_vault = "gStKd68ZtxeZ6cVUrJdwwrNAwd38sT5QFcmabUXesKU"
+
+[programs.devnet]
+bastion_guard = "2eace2zRjWZb6faQm3YcVn6NNfrRGVJw9F9FsRFvNP6M"
+demo_vault = "gStKd68ZtxeZ6cVUrJdwwrNAwd38sT5QFcmabUXesKU"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cargo test -p bastion-tests -- --nocapture"

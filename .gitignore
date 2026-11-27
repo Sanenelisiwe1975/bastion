@@ -1,0 +1,16 @@
+node_modules/
+demo/
+.env*
+target/*
+!target/deploy/
+target/deploy/*.so
+.anchor/
+monitor/bastion.config.json
+monitor/bastion.state.json
+# EVM
+evm/contracts/artifacts/
+evm/contracts/cache/
+evm/contracts/typechain-types/
+evm/monitor/dist/
+evm/demo/
+app/demo.local.json

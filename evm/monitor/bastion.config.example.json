@@ -1,0 +1,50 @@
+{
+  "chains": [
+    {
+      "name": "c-chain",
+      "rpcUrl": "https://api.avax.network/ext/bc/C/rpc",
+      "chainId": 43114,
+      "pollIntervalMs": 2000,
+      "guard": "0x0000000000000000000000000000000000000000"
+    },
+    {
+      "name": "my-l1",
+      "rpcUrl": "https://your-l1-node.example/ext/bc/<blockchainID>/rpc",
+      "chainId": 12345
+    }
+  ],
+  "contracts": [
+    {
+      "name": "ExampleVault",
+      "address": "0x0000000000000000000000000000000000000001",
+      "chain": "c-chain",
+      "autoPause": true,
+      "tokens": [
+        {
+          "address": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+          "symbol": "USDC",
+          "decimals": 6,
+          "warnOutflow": "10000000000",
+          "criticalOutflow": "250000000000",
+          "velocityLimit": "500000000000",
+          "velocityWindowSec": 600
+        }
+      ]
+    },
+    {
+      "name": "ExampleBridgeReceiver",
+      "address": "0x0000000000000000000000000000000000000002",
+      "chain": "my-l1",
+      "icmTrustedSenders": [
+        {
+          "sourceBlockchainID": "0x0427d4b22a2a78bcddd456742caf91b56badbff985ee19aef14573e7343fd652",
+          "sender": "0x0000000000000000000000000000000000000003"
+        }
+      ]
+    }
+  ],
+  "alerts": {
+    "webhooks": ["https://discord.com/api/webhooks/..."],
+    "minSeverity": "warning"
+  }
+}

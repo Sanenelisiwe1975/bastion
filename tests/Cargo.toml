@@ -1,0 +1,16 @@
+[package]
+name = "bastion-tests"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.84"
+publish = false
+
+[dependencies]
+
+[dev-dependencies]
+litesvm = "0.6"
+solana-sdk = "2.2"
+anchor-lang = "0.31.1"
+anchor-spl = { version = "0.31.1", default-features = false, features = ["token"] }
+bastion-guard = { path = "../programs/bastion-guard", features = ["no-entrypoint"] }
+demo-vault = { path = "../programs/demo-vault", features = ["no-entrypoint"] }
